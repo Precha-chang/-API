@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ข้อมูลส่วนตัว</title>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #4a90e2 0%, #50c878 100%);
+            --secondary-gradient: linear-gradient(135deg, #8e44ad 0%, #3498db 100%);
+            --bg-gradient: linear-gradient(135deg, #f6f8f9 0%, #e5ebee 100%);
+        }
+        body {
+            background: var(--bg-gradient);
+            font-family: 'Inter', Arial, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            padding: 15px;
+            background-attachment: fixed;
+        }
+        .profile-container {
+            max-width: 600px;
+            width: 100%;
+            perspective: 1000px;
+        }
+        .card {
+            border: none;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(50,50,93,.1), 0 5px 15px rgba(0,0,0,.07);
+            overflow: hidden;
+            transition: all 0.3s ease;
+            transform-style: preserve-3d;
+            will-change: transform;
+        }
+        .card:hover {
+            transform: translateY(-10px) rotateX(5deg);
+        }
+        .card-header {
+            background: var(--primary-gradient);
+            color: white;
+            text-align: center;
+            padding: 25px;
+            border-bottom: none;
+        }
+        .card-header h3 {
+            font-weight: 600;
+            letter-spacing: 1px;
+            margin-bottom: 0;
+        }
+        .profile-info {
+            background-color: #f1f3f5;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+        }
+        .form-label {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 0.5rem;
+        }
+        .form-control {
+            border: 2px solid transparent;
+            border-radius: 10px;
+            padding: 12px 15px;
+            background-color: #f1f3f5;
+            transition: all 0.3s ease;
+        }
+        .form-control:focus {
+            border-color: #4a90e2;
+            box-shadow: 0 0 0 0.25rem rgba(74, 144, 226, 0.25);
+            background-color: white;
+        }
+        .btn-edit-profile, .btn-save-profile {
+            background: var(--secondary-gradient);
+            border: none;
+            padding: 12px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            transition: all 0.4s ease;
+        }
+        .btn-edit-profile:hover, .btn-save-profile:hover {
+            transform: scale(1.05) translateY(-5px);
+            box-shadow: 0 7px 14px rgba(50,50,93,.1), 0 3px 6px rgba(0,0,0,.08);
+        }
+        .btn-logout {
+            background-color: #e74c3c;
+            color: white;
+        }
+        .invalid-feedback {
+            color: #e74c3c;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+    <div id="app" class="profile-container">
+        <div class="card" v-if="profile">
+            <div class="card-header">
+                <h3>{{ isEditing ? 'แก้ไขข้อมูลส่วนตัว' : 'ข้อมูลส่วนตัว' }}</h3>
+            </div>
+            <div class="card-body p-4">
+                <template v-if="!isEditing">
+                    <div class="profile-info">
+                        <div class="row mb-3">
+                            <div class="col-md-12">
+                                <label class="form-label">ชื่อผู้ใช้</label>
+                                <div class="form-control bg-white">{{ profile.username }}</div>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-12">
+                                <label class="form-label">อีเมล</label>
+                                <div class="form-control bg-white">{{ profile.email }}</div>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <label class="form-label">จังหวัด</label>
+                                <div class="form-control bg-white">{{ profile.province }}</div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">อำเภอ</label>
+                                <div class="form-control bg-white">{{ profile.district }}</div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">ตำบล</label>
+                                <div class="form-control bg-white">{{ profile.sub_district }}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <button @click="startEditing" class="btn btn-edit-profile">แก้ไขโปรไฟล์</button>
+                        <button @click="logout" class="btn btn-logout">ออกจากระบบ</button>
+                    </div>
+                </template>
+
+                <template v-else>
+                    <form @submit.prevent="saveProfile">
+                        <div class="row mb-3">
+                            <div class="col-md-12">
+                                <label for="email" class="form-label">อีเมล</label>
+                                <input 
+                                    type="email" 
+                                    id="email" 
+                                    v-model="editForm.email" 
+                                    class="form-control" 
+                                    :class="{ 'is-invalid': errors.email }"
+                                    placeholder="กรอกอีเมล"
+                                >
+                                <div class="invalid-feedback" v-if="errors.email">
+                                    {{ errors.email }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <label for="province" class="form-label">จังหวัด</label>
+                                <select 
+                                    id="province" 
+                                    v-model="editForm.province" 
+                                    @change="onProvinceChanged" 
+                                    class="form-control" 
+                                    :class="{ 'is-invalid': errors.province }"
+                                >
+                                    <option value="" disabled>เลือกจังหวัด</option>
+                                    <option 
+                                        v-for="province in provinces" 
+                                        :key="province" 
+                                        :value="province"
+                                    >
+                                        {{ province }}
+                                    </option>
+                                </select>
+                                <div class="invalid-feedback" v-if="errors.province">
+                                    {{ errors.province }}
+                                </div>
+                            </div>
+
+                            <div class="col-md-4">
+                                <label for="district" class="form-label">อำเภอ</label>
+                                <select 
+                                    id="district" 
+                                    v-model="editForm.district" 
+                                    @change="onDistrictChanged" 
+                                    class="form-control" 
+                                    :class="{ 'is-invalid': errors.district }"
+                                    :disabled="!editForm.province"
+                                >
+                                    <option value="" disabled>เลือกอำเภอ</option>
+                                    <option 
+                                        v-for="district in districts" 
+                                        :key="district" 
+                                        :value="district"
+                                    >
+                                        {{ district }}
+                                    </option>
+                                </select>
+                                <div class="invalid-feedback" v-if="errors.district">
+                                    {{ errors.district }}
+                                </div>
+                            </div>
+
+                            <div class="col-md-4">
+                                <label for="sub_district" class="form-label">ตำบล</label>
+                                <select 
+                                    id="sub_district" 
+                                    v-model="editForm.sub_district" 
+                                    class="form-control" 
+                                    :class="{ 'is-invalid': errors.sub_district }"
+                                    :disabled="!editForm.district"
+                                >
+                                    <option value="" disabled>เลือกตำบล</option>
+                                    <option 
+                                        v-for="subdistrict in subdistricts" 
+                                        :key="subdistrict" 
+                                        :value="subdistrict"
+                                    >
+                                        {{ subdistrict }}
+                                    </option>
+                                </select>
+                                <div class="invalid-feedback" v-if="errors.sub_district">
+                                    {{ errors.sub_district }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <button type="submit" class="btn btn-save-profile">บันทึก</button>
+                            <button type="button" @click="cancelEditing" class="btn btn-secondary">ยกเลิก</button>
+                        </div>  
+                    </form>
+                </template>
+            </div>
+        </div>
+
+     
+
+    <script>
+        const app = Vue.createApp({
+            data() {
+                return {
+                    profile: null,
+                    isEditing: false,
+                    editForm: {
+                        fname: '',
+                        lname: '',
+                        email: '',
+                        province: '',
+                        district: '',
+                        sub_district: ''
+                    },
+                    provinces: [],
+                    districts: [],
+                    subdistricts: [],
+                    errors: {}
+                };
+            },
+            mounted() {
+                this.fetchProfile();
+                this.fetchProvinces();
+            },
+            methods: {
+                async fetchProfile() {
+                    try {
+                        const token = localStorage.getItem('token');
+                        if (!token) {
+                            return;
+                        }
+
+                        const response = await axios.get('https://express-test-api-l0zc.onrender.com/profile', {
+                            headers: {
+                                'Authorization': `Bearer ${token}`
+                            }
+                        });
+
+                        this.profile = response.data;
+                        // Prepare edit form with current profile data
+                        this.editForm = {
+                            fname: this.profile.fname || '',
+                            lname: this.profile.lname || '',
+                            email: this.profile.email,
+                            province: this.profile.province,
+                            district: this.profile.district,
+                            sub_district: this.profile.sub_district
+                        };
+                  
+                    } catch (error) {
+                        console.error('Error fetching profile:', error);
+                        alert('ไม่สามารถโหลดข้อมูลโปรไฟล์ได้');
+                        
+                        if (error.response && (error.response.status === 401 || error.response.status === 403)) {
+                            localStorage.removeItem('token');
+                            this.redirectToLogin();
+                        }
+                    }
+                },
+                async fetchProvinces() {
+                    try {
+                        const response = await axios.get("https://express-test-api-l0zc.onrender.com/provinces"); 
+                        this.provinces = response.data;
+                    } catch (error) {
+                        console.error("Error fetching provinces:", error);
+                        alert("ไม่สามารถโหลดรายชื่อจังหวัดได้ กรุณาลองใหม่อีกครั้ง");
+                    }
+                },
+                async onProvinceChanged() {
+                    if (!this.editForm.province) return;
+
+                    try {
+                        const districtResponse = await axios.get(`https://express-test-api-l0zc.onrender.com/provinces/${this.editForm.province}`);
+                        this.districts = districtResponse.data;
+                        this.editForm.district = "";
+                        this.editForm.sub_district = "";
+                        this.subdistricts = [];
+                    } catch (error) {
+                        console.error("Error fetching districts:", error);
+                        alert("ไม่สามารถโหลดรายชื่ออำเภอได้ กรุณาลองใหม่อีกครั้ง");
+                    }
+                },
+                async onDistrictChanged() {
+                    if (!this.editForm.district) return;
+
+                    try {
+                        const subdistrictResponse = await axios.get(`https://express-test-api-l0zc.onrender.com/provinces/${this.editForm.province}/${this.editForm.district}`);
+                        this.subdistricts = subdistrictResponse.data;
+                        this.editForm.sub_district = "";
+                    } catch (error) {
+                        console.error("Error fetching subdistricts:", error);
+                        alert("ไม่สามารถโหลดรายชื่อตำบลได้ กรุณาลองใหม่อีกครั้ง");
+                    }
+                },
+                startEditing() {
+                    this.isEditing = true;
+                },
+                cancelEditing() {
+                    this.isEditing = false;
+                    this.errors = {};
+                },
+                validateForm() {
+                    this.errors = {};
+
+                    
+
+                    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                    if (!this.editForm.email.trim()) {
+                        this.errors.email = 'กรุณากรอกอีเมล';
+                    } else if (!emailRegex.test(this.editForm.email)) {
+                        this.errors.email = 'รูปแบบอีเมลไม่ถูกต้อง';
+                    }
+
+                    if (!this.editForm.province) {
+                        this.errors.province = 'กรุณาเลือกจังหวัด';
+                    }
+
+                    if (!this.editForm.district) {
+                        this.errors.district = 'กรุณาเลือกอำเภอ';
+                    }
+
+                    if (!this.editForm.sub_district) {
+                        this.errors.sub_district = 'กรุณาเลือกตำบล';
+                    }
+
+                    return Object.keys(this.errors).length === 0;
+                },
+                async saveProfile(e) {
+                    e.preventDefault()
+                    if (!this.validateForm()) {
+                        return;
+                    }
+
+                    console.log(this.editForm)
+
+                    try {
+                        const token = localStorage.getItem('token');
+                        if (!token) {
+                            this.redirectToLogin();
+                            return;
+                        }
+
+                        const response = await axios.put('https://express-test-api-l0zc.onrender.com/profile', this.editForm, {
+                            headers: {
+                                'Authorization': `Bearer ${token}`
+                            }
+                        });
+
+                        // Update local profile data
+                        this.profile = {
+                            ...this.profile,
+                            ...this.editForm
+                        };
+
+                        // Save updated profile to local storage
+                        localStorage.setItem('profile', JSON.stringify(this.profile));
+
+                        // Display success alert
+                        alert('อัพเดทข้อมูลสำเร็จ');
+                        this.isEditing = false;
+                        this.errors = {};
+                    } catch (error) {
+                        console.error('Error updating profile:', error);
+
+                        if (error.response) {
+                            const { status, message } = error.response.data;
+                            if (status === 400) {
+                                alert('ข้อมูลไม่ถูกต้อง: ' + message);
+                            } else if (status === 500) {
+                                alert('เกิดข้อผิดพลาดในเซิร์ฟเวอร์: ' + message);
+                            }
+                        } else {
+                            alert('ไม่สามารถอัพเดทข้อมูลได้ กรุณาลองใหม่อีกครั้ง');
+                        }
+                    }
+                    
+                },
+
+                logout() {
+                    localStorage.removeItem('token');
+                    this.redirectToLogin();
+                },
+                redirectToLogin() {
+                    window.location.href = 'login.html';
+                }
+            }
+        });
+        app.mount('#app')
+    </script>
+</body>
+</html>

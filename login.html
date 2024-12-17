@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>เข้าสู่ระบบ</title>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #4a90e2 0%, #50c878 100%);
+            --secondary-gradient: linear-gradient(135deg, #8e44ad 0%, #3498db 100%);
+            --bg-gradient: linear-gradient(135deg, #f6f8f9 0%, #e5ebee 100%);
+        }
+        body {
+            background: var(--bg-gradient);
+            font-family: 'Inter', Arial, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            padding: 15px;
+            background-attachment: fixed;
+        }
+        .login-container {
+            max-width: 400px;
+            width: 100%;
+            perspective: 1000px;
+        }
+        .card {
+            border: none;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(50,50,93,.1), 0 5px 15px rgba(0,0,0,.07);
+            overflow: hidden;
+            transition: all 0.3s ease;
+            transform-style: preserve-3d;
+            will-change: transform;
+        }
+        .card:hover {
+            transform: translateY(-10px) rotateX(5deg);
+        }
+        .card-header {
+            background: var(--primary-gradient);
+            color: white;
+            text-align: center;
+            padding: 25px;
+            border-bottom: none;
+        }
+        .card-header h3 {
+            font-weight: 600;
+            letter-spacing: 1px;
+            margin-bottom: 0;
+        }
+        .form-label {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 0.5rem;
+            transition: color 0.3s ease;
+        }
+        .form-control {
+            border: 2px solid transparent;
+            border-radius: 10px;
+            padding: 12px 15px;
+            background-color: #f1f3f5;
+            transition: all 0.3s ease;
+        }
+        .form-control:focus {
+            border-color: #4a90e2;
+            box-shadow: 0 0 0 0.25rem rgba(74, 144, 226, 0.25);
+            background-color: white;
+        }
+        .btn-login {
+            background: var(--secondary-gradient);
+            border: none;
+            padding: 12px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            transition: all 0.4s ease;
+        }
+        .btn-login:hover {
+            transform: scale(1.05) translateY(-5px);
+            box-shadow: 0 7px 14px rgba(50,50,93,.1), 0 3px 6px rgba(0,0,0,.08);
+        }
+        .invalid-feedback {
+            color: #e74c3c;
+            font-weight: 500;
+        }
+        .register-link {
+            color: #4a90e2;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+        .register-link:hover {
+            color: #3498db;
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div id="app" class="login-container">
+        <div class="card">
+            <div class="card-header">
+                <h3>เข้าสู่ระบบ</h3>
+            </div>
+            <div class="card-body p-4">
+                <form @submit.prevent="login">
+                    <div class="mb-3">
+                        <label for="username" class="form-label">ชื่อผู้ใช้</label>
+                        <input 
+                            type="text" 
+                            id="username" 
+                            v-model="form.username" 
+                            class="form-control" 
+                            :class="{ 'is-invalid': errors.username }"
+                            placeholder="กรอกชื่อผู้ใช้"
+                        >
+                        <div class="invalid-feedback" v-if="errors.username">
+                            {{ errors.username }}
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="password" class="form-label">รหัสผ่าน</label>
+                        <input 
+                            type="password" 
+                            id="password" 
+                            v-model="form.password" 
+                            class="form-control" 
+                            :class="{ 'is-invalid': errors.password }"
+                            placeholder="กรอกรหัสผ่าน"
+                        >
+                        <div class="invalid-feedback" v-if="errors.password">
+                            {{ errors.password }}
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-login btn-primary w-100 mt-3">
+                        เข้าสู่ระบบ
+                    </button>
+
+                    <div class="text-center mt-3">
+                        <span>ยังไม่มีบัญชี? </span>
+                        <a href="http://127.0.0.1:5500/index.html" class="register-link">สมัครสมาชิก</a>
+
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Login Error Modal -->
+        <div v-if="loginError" class="modal modal-error d-block" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header bg-danger text-white">
+                        <h5 class="modal-title">เข้าสู่ระบบไม่สำเร็จ</h5>
+                    </div>
+                    <div class="modal-body">
+                        <p>{{ loginErrorMessage }}</p>
+                        <button @click="loginError = false" class="btn btn-secondary w-100">ปิด</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const app = Vue.createApp({
+            data() {
+                return {
+                    form: {
+                        username: '',
+                        password: ''
+                    },
+                    errors: {},
+                    loginError: false,
+                    loginErrorMessage: ''
+                };
+            },
+            methods: {
+                validateForm() {
+                    this.errors = {};
+
+                    if (!this.form.username.trim()) {
+                        this.errors.username = 'กรุณากรอกชื่อผู้ใช้';
+                    }
+
+                    if (!this.form.password.trim()) {
+                        this.errors.password = 'กรุณากรอกรหัสผ่าน';
+                    }
+
+                    return Object.keys(this.errors).length === 0;
+                },
+                async login() {
+                    if (this.validateForm()) {
+                        try {
+                            const response = await axios.post('https://express-test-api-l0zc.onrender.com/login', {
+                                username: this.form.username,
+                                password: this.form.password
+                            });
+
+                            // Store the token in localStorage
+                            localStorage.setItem('token', response.data.token);
+                            localStorage.setItem('user', JSON.stringify(response.data.user));
+
+                         window.location.replace('http://127.0.0.1:5500/profile.html')
+                        } catch (error) {
+                            this.loginError = true;
+                            this.loginErrorMessage = error.response?.data?.message || 'เกิดข้อผิดพลาดในการเข้าสู่ระบบ กรุณาลองใหม่อีกครั้ง';
+                        }
+                    }
+                }
+            }
+        });
+        app.mount('#app')
+    </script>
+</body>
+</html>

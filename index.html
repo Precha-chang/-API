@@ -267,7 +267,7 @@
             },
             async mounted() {
                 try {
-                    const response = await axios.get("https://express-test-api-mocha.vercel.app/provinces");
+                    const response = await axios.get("https://express-test-api-l0zc.onrender.com/provinces"); 
                     this.provinces = response.data;
                 } catch (error) {
                     console.error("Error fetching provinces:", error);
@@ -279,7 +279,7 @@
                     if (!this.form.province) return;
 
                     try {
-                        const districtResponse = await axios.get(`https://express-test-api-mocha.vercel.app/provinces/${this.form.province}`);
+                        const districtResponse = await axios.get(`https://express-test-api-l0zc.onrender.com/provinces/${this.form.province}`);
                         this.districts = districtResponse.data;
                         this.form.district = "";
                         this.form.sub_district = "";
@@ -293,7 +293,7 @@
                     if (!this.form.district) return;
 
                     try {
-                        const subdistrictResponse = await axios.get(`https://express-test-api-mocha.vercel.app/provinces/${this.form.province}/${this.form.district}`);
+                        const subdistrictResponse = await axios.get(`https://express-test-api-l0zc.onrender.com/provinces/${this.form.province}/${this.form.district}`);
                         this.subdistricts = subdistrictResponse.data;
                         this.form.sub_district = "";
                     } catch (error) {
@@ -340,10 +340,47 @@
                         this.showConfirmation = true;
                     }
                 },
-                confirmRegistration() {
-                    alert('ลงทะเบียนสำเร็จ!');
-                    console.log('ข้อมูลที่ส่ง:', this.form);
-                    this.showConfirmation = false;
+                async confirmRegistration() {
+    try {
+        const response = await axios.post('https://express-test-api-l0zc.onrender.com/register', this.form);
+
+        if (response.status === 201) {
+            alert('ลงทะเบียนสำเร็จ!');
+            console.log('Response:', response.data);
+            this.resetForm();
+            // เปลี่ยนเส้นทางไปที่หน้า login หลังลงทะเบียนสำเร็จ
+            window.location.href = 'http://127.0.0.1:5500/login.html';
+        }
+    } catch (error) {
+        if (error.response) {
+            const { status, message } = error.response.data;
+            if (status === 400) {
+                alert('ข้อมูลไม่ถูกต้อง: ' + message);
+            } else if (status === 500) {
+                alert('เกิดข้อผิดพลาดในเซิร์ฟเวอร์: ' + message);
+            } else {
+                alert(`เกิดข้อผิดพลาดที่ไม่คาดคิด: ${message || 'กรุณาลองใหม่อีกครั้ง'}`);
+            }
+        } else {
+            alert('ไม่สามารถติดต่อเซิร์ฟเวอร์ได้ กรุณาลองใหม่อีกครั้ง');
+        }
+        console.error('Error:', error);
+    } finally {
+        this.showConfirmation = false;
+    }
+},
+
+
+                resetForm() {
+                    this.form = {
+                        username: '',
+                        password: '',
+                        email: '',
+                        province: '',
+                        district: '',
+                        sub_district: ''
+                    };
+                    this.errors = {};
                 },
                 cancelRegistration() {
                     this.showConfirmation = false;
@@ -353,4 +390,4 @@
         app.mount('#app')
     </script>
 </body>
-</html>
+</html> 
