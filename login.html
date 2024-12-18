@@ -144,7 +144,7 @@
 
                     <div class="text-center mt-3">
                         <span>ยังไม่มีบัญชี? </span>
-                        <a href="http://127.0.0.1:5500/index.html" class="register-link">สมัครสมาชิก</a>
+                        <a href="index.html" class="register-link">สมัครสมาชิก</a>
 
                     </div>
                 </form>
@@ -206,7 +206,7 @@
                             localStorage.setItem('token', response.data.token);
                             localStorage.setItem('user', JSON.stringify(response.data.user));
 
-                         window.location.replace('http://127.0.0.1:5500/profile.html')
+                         window.location.replace('profile.html')
                         } catch (error) {
                             this.loginError = true;
                             this.loginErrorMessage = error.response?.data?.message || 'เกิดข้อผิดพลาดในการเข้าสู่ระบบ กรุณาลองใหม่อีกครั้ง';
